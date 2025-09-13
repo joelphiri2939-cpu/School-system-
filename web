@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeachMate</title>
+<style>
+    body { font-family: 'Arial', sans-serif; margin:0; padding:0; background:linear-gradient(135deg,#fdfbfb,#ebedee); color:#333; }
+    .hidden { display:none; }
+    #splash { position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,#4e54c8,#8f94fb); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:1000; }
+    #splash-avatar { width:150px; height:150px; background:#fff; border-radius:50%; display:flex; justify-content:center; align-items:center; font-size:80px; color:#4e54c8; box-shadow:0 4px 15px rgba(0,0,0,0.3); margin-bottom:20px; }
+    #splash h1 { color:white; font-size:2.5em; text-shadow:0 2px 5px rgba(0,0,0,0.3); }
+    .card { background:white; padding:20px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); max-width:400px; margin:20px auto; }
+    input, select, button { width:100%; padding:10px; margin:10px 0; border-radius:5px; border:1px solid #ddd; font-size:1em; }
+    button { background: linear-gradient(135deg,#4e54c8,#8f94fb); color:white; border:none; cursor:pointer; transition:0.3s; }
+    button:hover { background: linear-gradient(135deg,#8f94fb,#4e54c8); }
+    #dashboard { padding:20px; }
+    #header { background: linear-gradient(135deg,#4e54c8,#8f94fb); color:white; padding:15px; border-radius:10px; text-align:center; box-shadow:0 4px 8px rgba(0,0,0,0.1); }
+    #clock { font-size:1.2em; margin-top:10px; }
+    .nav-button { display:block; margin:10px 0; }
+    table { width:100%; border-collapse: collapse; margin:20px 0; }
+    th,td { padding:10px; border:1px solid #ddd; text-align:left; }
+    th { background:#f8f9fa; }
+    .present { color:#28a745; font-weight:bold; }
+    .absent { color:#dc3545; font-weight:bold; }
+    .good { color:#28a745; }
+    .average { color:#fd7e14; }
+    .poor { color:#dc3545; }
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div id="splash">
+    <div id="splash-avatar">👩‍🏫</div>
+    <h1>Welcome to TeachMate</h1>
+</div>
+
+<!-- Login/Register -->
+<div id="login" class="card hidden">
+    <h2>Login / Register</h2>
+    <input type="text" id="teacher-email" placeholder="Email">
+    <input type="password" id="teacher-password" placeholder="Password">
+    <button onclick="loginTeacher()">Login</button>
+    <button onclick="registerTeacher()">Register</button>
+    <p id="login-error" style="color:red;"></p>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="hidden">
+    <div id="header">
+        <h2 id="welcome"></h2>
+        <div id="clock"></div>
+    </div>
+    <button class="nav-button" onclick="showSection('class-management')">Class Management</button>
+    <button class="nav-button" onclick="showSection('attendance')">Attendance Register</button>
+    <button class="nav-button" onclick="showSection('results')">Results Tracking</button>
+    <button class="nav-button" onclick="logout()">Logout</button>
+</div>
+
+<!-- Class Management -->
+<div id="class-management" class="hidden card">
+    <h2>Class Management</h2>
+    <input type="text" id="new-class" placeholder="Class Name (e.g., Grade 9A)">
+    <button onclick="createClass()">Create Class</button>
+    <select id="select-class" onchange="loadStudents()"><option value="">Select Class</option></select>
+    <h3>Add Student</h3>
+    <input type="text" id="student-id" placeholder="Student ID">
+    <input type="text" id="student-name" placeholder="Student Name">
+    <button onclick="addStudent()">Add Student</button>
+    <h3>Students List</h3>
+    <ul id="students-list"></ul>
+</div>
+
+<!-- Attendance -->
+<div id="attendance" class="hidden card">
+    <h2>Attendance Register</h2>
+    <select id="attendance-class" onchange="loadAttendanceStudents()"></select>
+    <table id="attendance-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+    </table>
+    <button onclick="saveAttendance()">Save Attendance</button>
+    <button onclick="clearAttendance()">Clear Attendance</button>
+    <h3>View History</h3>
+    <input type="text" id="search-student-id" placeholder="Student ID (optional)">
+    <input type="date" id="search-date">
+    <button onclick="viewAttendanceHistory()">View History</button>
+    <div id="attendance-history"></div>
+</div>
+
+<!-- Results -->
+<div id="results" class="hidden card">
+    <h2>Results Tracking</h2>
+    <select id="results-class" onchange="loadResultsStudents()"></select>
+    <input type="text" id="subject" placeholder="Subject">
+    <input type="text" id="test-name" placeholder="Test Name">
+    <input type="date" id="test-date">
+    <table id="results-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Score</th></tr></thead>
+        <tbody></tbody>
+    </table>
+    <button onclick="saveResults()">Save Results</button>
+    <h3>View Results History</h3>
+    <input type="text" id="results-search-student-id" placeholder="Student ID">
+    <input type="text" id="results-search-subject" placeholder="Subject">
+    <input type="date" id="results-search-date">
+    <button onclick="viewResultsHistory()">View History</button>
+    <div id="results-history"></div>
+</div>
+
+<script>
+let currentTeacher=null;
+let clockInterval = null;
+const today=new Date().toISOString().split('T')[0];
+
+function initStorage(){
+    if(!localStorage.getItem('teachers')) localStorage.setItem('teachers', JSON.stringify({}));
+    if(!localStorage.getItem('classes')) localStorage.setItem('classes', JSON.stringify([]));
+    if(!localStorage.getItem('students')) localStorage.setItem('students', JSON.stringify({}));
+    if(!localStorage.getItem('attendance')) localStorage.setItem('attendance', JSON.stringify({}));
+    if(!localStorage.getItem('results')) localStorage.setItem('results', JSON.stringify({}));
+}
+
+window.onload=function(){
+    initStorage();
+    const splash=document.getElementById('splash');
+    const login=document.getElementById('login');
+    splash.style.display='flex';
+    setTimeout(()=>{
+        splash.style.transition='opacity 1s';
+        splash.style.opacity=0;
+        setTimeout(()=>{
+            splash.style.display='none';
+            login.classList.remove('hidden');
+            history.replaceState({view: 'login'}, '', '#login');
+        },1000);
+    },3000);
+};
+
+// Clock
+function startClock(){
+    const clock=document.getElementById('clock');
+    if (clockInterval) {
+        clearInterval(clockInterval);
+    }
+    clockInterval = setInterval(()=>{ clock.innerText=new Date().toLocaleTimeString(); },1000);
+}
+
+// Login/Register
+function registerTeacher(){
+    const email=document.getElementById('teacher-email').value.trim();
+    const pass=document.getElementById('teacher-password').value.trim();
+    if(!email||!pass){ alert("Fill all fields"); return; }
+    const teachers=JSON.parse(localStorage.getItem('teachers'));
+    if(teachers[email]){ alert("Teacher exists"); return; }
+    teachers[email]={password:pass};
+    localStorage.setItem('teachers', JSON.stringify(teachers));
+    alert("Teacher registered! Now login");
+}
+
+function loginTeacher(){
+    const email=document.getElementById('teacher-email').value.trim();
+    const pass=document.getElementById('teacher-password').value.trim();
+    const teachers=JSON.parse(localStorage.getItem('teachers'));
+    if(!teachers[email]||teachers[email].password!==pass){
+        document.getElementById('login-error').innerText="Invalid credentials"; return;
+    }
+    currentTeacher=email;
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('welcome').innerText=`Welcome, ${currentTeacher}`;
+    startClock();
+    loadClasses();
+    history.pushState({view: 'dashboard'}, '', '#dashboard');
+}
+
+// Logout
+function logout(){ 
+    currentTeacher=null; 
+    document.getElementById('dashboard').classList.add('hidden'); 
+    document.getElementById('login').classList.remove('hidden'); 
+    hideAllSections(); 
+    history.pushState({view: 'login'}, '', '#login');
+    if (clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
+    }
+}
+
+// Show/Hide Sections
+function showSection(section){
+    hideAllSections();
+    document.getElementById(section).classList.remove('hidden');
+    if(section==='attendance') loadAttendanceClasses();
+    if(section==='results') loadResultsClasses();
+    history.pushState({view: section}, '', `#${section}`);
+}
+function hideAllSections(){ ['class-management','attendance','results'].forEach(id=>{ document.getElementById(id).classList.add('hidden'); }); }
+
+// Handle back/forward navigation
+window.addEventListener('popstate', function(event) {
+    const view = event.state ? event.state.view : 'login';
+    if (view === 'login') {
+        currentTeacher = null;
+        document.getElementById('dashboard').classList.add('hidden');
+        document.getElementById('login').classList.remove('hidden');
+        hideAllSections();
+        if (clockInterval) {
+            clearInterval(clockInterval);
+            clockInterval = null;
+        }
+    } else {
+        if (currentTeacher === null) {
+            history.pushState({view: 'login'}, '', '#login');
+            return;
+        }
+        document.getElementById('dashboard').classList.remove('hidden');
+        document.getElementById('login').classList.add('hidden');
+        if (view === 'dashboard') {
+            hideAllSections();
+        } else {
+            hideAllSections();
+            document.getElementById(view).classList.remove('hidden');
+            if(view==='attendance') loadAttendanceClasses();
+            if(view==='results') loadResultsClasses();
+            if(view==='class-management') loadClasses();
+        }
+    }
+});
+
+// Class Management
+function loadClasses(){
+    const classes=JSON.parse(localStorage.getItem('classes'));
+    const selects=['select-class','attendance-class','results-class'];
+    selects.forEach(sel=>{
+        const select=document.getElementById(sel);
+        select.innerHTML='<option value="">Select Class</option>';
+        classes.forEach(cls=>{ select.innerHTML+=`<option value="${cls}">${cls}</option>`; });
+    });
+}
+function createClass(){
+    const className=document.getElementById('new-class').value.trim();
+    if(!className) return;
+    let classes=JSON.parse(localStorage.getItem('classes'));
+    if(!classes.includes(className)){
+        classes.push(className);
+        localStorage.setItem('classes',JSON.stringify(classes));
+        loadClasses();
+        let students=JSON.parse(localStorage.getItem('students'));
+        students[className]=[];
+        localStorage.setItem('students',JSON.stringify(students));
+        let attendance=JSON.parse(localStorage.getItem('attendance'));
+        attendance[className]={};
+        localStorage.setItem('attendance',JSON.stringify(attendance));
+        let results=JSON.parse(localStorage.getItem('results'));
+        results[className]={};
+        localStorage.setItem('results',JSON.stringify(results));
+    }
+    document.getElementById('new-class').value='';
+}
+function loadStudents(){
+    const className=document.getElementById('select-class').value;
+    const list=document.getElementById('students-list');
+    list.innerHTML='';
+    if(!className) return;
+    const students=JSON.parse(localStorage.getItem('students'))[className]||[];
+    students.forEach(s=>{ list.innerHTML+=`<li>${s.id} - ${s.name}</li>`; });
+}
+function addStudent(){
+    const className=document.getElementById('select-class').value;
+    const id=document.getElementById('student-id').value.trim();
+    const name=document.getElementById('student-name').value.trim();
+    if(!className||!id||!name) return;
+    let students=JSON.parse(localStorage.getItem('students'));
+    let classStudents=students[className]||[];
+    if(!classStudents.find(s=>s.id===id)){
+        classStudents.push({id,name});
+        students[className]=classStudents;
+        localStorage.setItem('students',JSON.stringify(students));
+        loadStudents();
+    }
+    document.getElementById('student-id').value='';
+    document.getElementById('student-name').value='';
+}
+
+// Attendance
+function loadAttendanceClasses(){ loadClasses(); }
+function loadAttendanceStudents(){
+    const className=document.getElementById('attendance-class').value;
+    const tbody=document.querySelector('#attendance-table tbody');
+    tbody.innerHTML='';
+    if(!className) return;
+    const students=JSON.parse(localStorage.getItem('students'))[className]||[];
+    students.forEach(s=>{
+        tbody.innerHTML+=`<tr>
+            <td>${s.id}</td>
+            <td>${s.name}</td>
+            <td>
+                <select data-id="${s.id}">
+                    <option value="">Select</option>
+                    <option value="present">Present ✅</option>
+                    <option value="absent">Absent ❌</option>
+                </select>
+            </td>
+        </tr>`;
+    });
+}
+function saveAttendance(){
+    const className=document.getElementById('attendance-class').value;
+    if(!className) return;
+    const attendance=JSON.parse(localStorage.getItem('attendance'));
+    const date=today;
+    attendance[className][date]=[];
+    document.querySelectorAll('#attendance-table select').forEach(sel=>{
+        if(sel.value){
+            attendance[className][date].push({id:sel.dataset.id, present: sel.value==='present'});
+        }
+    });
+    localStorage.setItem('attendance',JSON.stringify(attendance));
+    alert('Attendance saved for '+date);
+    loadAttendanceStudents();
+}
+function clearAttendance(){
+    const className=document.getElementById('attendance-class').value;
+    if(!className) return;
+    document.querySelectorAll('#attendance-table select').forEach(sel=>sel.value='');
+}
+function viewAttendanceHistory(){
+    const className=document.getElementById('attendance-class').value;
+    if(!className) return;
+    const studentId=document.getElementById('search-student-id').value.trim();
+    const date=document.getElementById('search-date').value;
+    const historyDiv=document.getElementById('attendance-history');
+    const attendance=JSON.parse(localStorage.getItem('attendance'))[className]||{};
+    let output='<table><thead><tr><th>Date</th><th>ID</th><th>Name</th><th>Status</th></tr></thead><tbody>';
+    Object.keys(attendance).forEach(d=>{
+        if(!date||d===date){
+            attendance[d].forEach(rec=>{
+                if(!studentId||rec.id===studentId){
+                    const students=JSON.parse(localStorage.getItem('students'))[className];
+                    const stu=students.find(s=>s.id===rec.id);
+                    const status=rec.present?'<span class="present">Present ✅</span>':'<span class="absent">Absent ❌</span>';
+                    output+=`<tr><td>${d}</td><td>${rec.id}</td><td>${stu?stu.name:''}</td><td>${status}</td></tr>`;
+                }
+            });
+        }
+    });
+    output+='</tbody></table>';
+    historyDiv.innerHTML=output;
+}
+
+// Results
+function loadResultsClasses(){ loadClasses(); }
+function loadResultsStudents(){
+    const className=document.getElementById('results-class').value;
+    const tbody=document.querySelector('#results-table tbody');
+    tbody.innerHTML='';
+    if(!className) return;
+    const students=JSON.parse(localStorage.getItem('students'))[className]||[];
+    students.forEach(s=>{
+        tbody.innerHTML+=`<tr>
+            <td>${s.id}</td>
+            <td>${s.name}</td>
+            <td><input type="number" data-id="${s.id}" placeholder="0-100"></td>
+        </tr>`;
+    });
+}
+function saveResults(){
+    const className=document.getElementById('results-class').value;
+    const subject=document.getElementById('subject').value.trim();
+    const testName=document.getElementById('test-name').value.trim();
+    const date=document.getElementById('test-date').value||today;
+    if(!className||!subject||!testName) return;
+    let results=JSON.parse(localStorage.getItem('results'));
+    if(!results[className][subject]) results[className][subject]={};
+    results[className][subject][testName]={date, scores:{}};
+    document.querySelectorAll('#results-table input[type="number"]').forEach(inp=>{
+        const score=parseInt(inp.value);
+        if(!isNaN(score)) results[className][subject][testName].scores[inp.dataset.id]=score;
+    });
+    localStorage.setItem('results',JSON.stringify(results));
+    alert('Results saved for '+testName+' on '+date);
+    loadResultsStudents();
+    document.getElementById('subject').value='';
+    document.getElementById('test-name').value='';
+    document.getElementById('test-date').value='';
+}
+function viewResultsHistory(){
+    const className=document.getElementById('results-class').value;
+    if(!className) return;
+    const studentId=document.getElementById('results-search-student-id').value.trim();
+    const subject=document.getElementById('results-search-subject').value.trim();
+    const date=document.getElementById('results-search-date').value;
+    const historyDiv=document.getElementById('results-history');
+    const results=JSON.parse(localStorage.getItem('results'))[className]||{};
+    let output='<table><thead><tr><th>Date</th><th>Subject</th><th>Test</th><th>ID</th><th>Name</th><th>Score</th></tr></thead><tbody>';
+    Object.keys(results).forEach(sub=>{
+        if(subject&&!subject.toLowerCase().includes(sub.toLowerCase())) return;
+        Object.keys(results[sub]).forEach(test=>{
+            const r=results[sub][test];
+            if(date&&r.date!==date) return;
+            Object.keys(r.scores).forEach(id=>{
+                if(studentId&&id!==studentId) return;
+                const students=JSON.parse(localStorage.getItem('students'))[className];
+                const stu=students.find(s=>s.id===id);
+                output+=`<tr><td>${r.date}</td><td>${sub}</td><td>${test}</td><td>${id}</td><td>${stu?stu.name:''}</td><td>${r.scores[id]}</td></tr>`;
+            });
+        });
+    });
+    output+='</tbody></table>';
+    historyDiv.innerHTML=output;
+}
+</script>
+</body>
+</html>
