@@ -1,0 +1,2470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeachMate - Classroom Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      --gradient: linear-gradient(135deg, #ff4e50 0%, #f9d423 100%);
+      --glass: rgba(255, 255, 255, 0.2);
+      --light: #ffffff;
+      --dark: #1a1a1a;
+      --text-light: #333333;
+      --accent: #00cc88;
+      --secondary: #ff6f61;
+      --radius: 18px;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--light);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #auth-section { display: none; }
+    #dashboard {
+      display: none;
+      width: 250px;
+      position: sticky;
+      top: 80px;
+      align-self: flex-start;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin: 1rem;
+    }
+
+    #class-management, #attendance, #results, #fees { display: none; }
+
+    header {
+      background: var(--gradient);
+      padding: 1rem 2rem;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--light);
+    }
+
+    #clock {
+      font-size: 1rem;
+      background: var(--glass);
+      color: var(--text-light);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+    }
+
+    .app-container {
+      display: flex;
+      flex: 1;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .content-container {
+      flex: 1;
+      padding: 0 1rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      padding: 1.8rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--accent);
+      margin-bottom: 2rem;
+    }
+
+    .card h2 {
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .card h3 {
+      font-size: 1.2rem;
+      margin: 1rem 0 0.5rem;
+      color: var(--secondary);
+    }
+
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 2px solid var(--accent);
+      background: #ffffff;
+      border-radius: 8px;
+      color: var(--text-light);
+      font-size: 1rem;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    textarea {
+      height: 80px;
+      resize: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 8px rgba(255, 111, 97, 0.3);
+    }
+
+    input::placeholder, select:invalid, textarea::placeholder { color: transparent; }
+
+    .input-wrapper label {
+      position: absolute;
+      top: 0.8rem;
+      left: 1rem;
+      color: var(--text-light);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    input:focus + label,
+    input:not(:placeholder-shown) + label,
+    select:not(:invalid) + label,
+    textarea:focus + label,
+    textarea:not(:placeholder-shown) + label {
+      top: -0.7rem;
+      left: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--secondary);
+      background: #ffffff;
+      padding: 0.1rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    input[type="file"] {
+      padding: 0.5rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.8rem 1.2rem;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: var(--light);
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 0.5rem 0;
+    }
+
+    button:hover {
+      background: var(--secondary);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(255, 111, 97, 0.3);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .nav-button { font-size: 1.1rem; padding: 1rem 1.2rem; }
+    #auth-section #reset-btn { background: var(--glass); color: var(--text-light); }
+    #auth-section #reset-btn:hover { background: rgba(255, 255, 255, 0.3); }
+    #logout-btn { background: #ff4e50; }
+    #logout-btn:hover { background: #e63946; }
+
+    .delete-btn, .delete-fee-btn, .delete-result-btn {
+      background: #ff4e50;
+      padding: 0.5rem 1rem;
+      width: auto;
+      display: inline-block;
+    }
+
+    .delete-btn:hover, .delete-fee-btn:hover, .delete-result-btn:hover { background: #e63946; }
+
+    .edit-attendance-btn, .edit-photo-btn, .edit-phone-btn, .edit-address-btn, .edit-fee-btn, .edit-score-btn {
+      background: #00cc88;
+      padding: 0.5rem 1rem;
+      width: auto;
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+
+    .edit-attendance-btn:hover, .edit-photo-btn:hover, .edit-phone-btn:hover, .edit-address-btn:hover, .edit-fee-btn:hover, .edit-score-btn:hover {
+      background: #009966;
+    }
+
+    .delete-all-fees-btn, .delete-all-results-btn, .delete-all-attendance-btn, .hide-history-btn, .hide-results-history-btn, .delete-class-btn {
+      background: #ff4e50;
+      padding: 0.8rem 1.2rem;
+      width: auto;
+      display: inline-block;
+      margin: 1rem 0.5rem;
+    }
+
+    .delete-all-fees-btn:hover, .delete-all-results-btn:hover, .delete-all-attendance-btn:hover, .hide-history-btn:hover, .hide-results-history-btn:hover, .delete-class-btn:hover {
+      background: #e63946;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(255, 111, 97, 0.3);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 1.5rem;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 2px solid var(--accent);
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--accent);
+      color: var(--text-light);
+      vertical-align: middle;
+    }
+
+    th {
+      background: var(--gradient);
+      color: var(--light);
+      font-weight: 600;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    tr:hover { background: rgba(0, 204, 136, 0.1); }
+
+    .present, .good, .paid { color: #00cc88; font-weight: 600; }
+    .absent, .poor, .unpaid { color: #ff4e50; font-weight: 600; }
+    .outstanding { color: #f9d423; font-weight: 600; }
+
+    #students-list {
+      list-style: none;
+      margin-top: 1rem;
+    }
+
+    #students-list li {
+      padding: 0.8rem;
+      background: #ffffff;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      border: 1px solid var(--accent);
+    }
+
+    .student-item {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .student-details {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .student-field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .student-field-label {
+      font-weight: 600;
+      color: var(--secondary);
+      font-size: 0.9rem;
+    }
+
+    .student-field-value {
+      font-size: 1rem;
+      color: var(--text-light);
+    }
+
+    .no-data {
+      color: #888888;
+      font-style: italic;
+    }
+
+    #students-list a {
+      color: var(--secondary);
+      text-decoration: none;
+    }
+
+    #students-list a:hover { text-decoration: underline; }
+
+    .student-photo {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-right: 1.5rem;
+      vertical-align: middle;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .student-photo:hover {
+      transform: scale(1.1);
+    }
+
+    .student-photo-preview {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      padding: 2rem;
+      max-width: 90%;
+      max-height: 90%;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--accent);
+      position: relative;
+      text-align: center;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 1.5rem;
+      color: var(--light);
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .modal-close:hover {
+      color: var(--secondary);
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .zoomed-photo {
+      max-width: 300px;
+      max-height: 300px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 2px solid var(--accent);
+    }
+
+    /* Loading Overlay Styles */
+    #loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 3000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--glass);
+      border-top: 5px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    .loading-message {
+      color: var(--light);
+      font-size: 1.1rem;
+      font-weight: 500;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255, 78, 80, 0.9) 0%, rgba(249, 212, 35, 0.9) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity 1.2s ease;
+    }
+
+    .splash-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .splash-icon {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+
+    .splash-title { font-size: 2.5rem; font-weight: 700; color: #ff4e50; text-transform: uppercase; }
+    .splash-subtitle { font-size: 1.2rem; color: var(--text-light); margin-top: 1rem; text-align: center; opacity: 0; animation: fadeIn 1.5s forwards 0.5s; }
+    .splash-progress { margin-top: 2rem; text-align: center; }
+    .progress-bar { width: 250px; height: 8px; background: rgba(255, 255, 255, 0.4); border-radius: 5px; overflow: hidden; }
+    #progress-fill { width: 0%; height: 100%; background: var(--accent); border-radius: 5px; transition: width 0.3s linear; }
+    .progress-text { font-size: 0.9rem; color: var(--text-light); margin-top: 0.5rem; opacity: 0; animation: fadeIn 1.5s forwards 0.7s; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+    /* Enhanced Attendance Status Styles */
+    .status-cell {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .status-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      min-width: 80px;
+    }
+
+    .present-btn {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .absent-btn {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .status-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .status-btn.active {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .present-btn.active {
+      background: #00cc88;
+      color: var(--light);
+    }
+
+    .absent-btn.active {
+      background: #ff4e50;
+      color: var(--light);
+    }
+
+    @media (max-width: 768px) {
+      .app-container { flex-direction: column; }
+      #dashboard { width: 100%; position: static; margin: 1rem 0; }
+      .content-container { padding: 0; }
+      header h1 { font-size: 1.5rem; }
+      .card { padding: 1.2rem; }
+      .splash-title { font-size: 2rem; }
+      .splash-subtitle { font-size: 1rem; }
+      .splash-icon { width: 150px; height: 150px; }
+      .progress-bar { width: 200px; }
+      input, select, textarea, button { font-size: 0.9rem; }
+      th, td { font-size: 0.85rem; padding: 0.8rem; }
+      .student-details { grid-template-columns: 1fr; }
+      .student-photo { width: 80px; height: 80px; margin-right: 1rem; }
+      .student-photo-preview { width: 120px; height: 120px; }
+      .zoomed-photo { max-width: 80vw; max-height: 80vh; }
+      .modal-content { padding: 1.5rem; }
+      .status-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; min-width: 70px; }
+      .loading-spinner { width: 40px; height: 40px; }
+      .loading-message { font-size: 1rem; }
+    }
+
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.2rem; }
+      .card h2 { font-size: 1.2rem; }
+      .splash-title { font-size: 1.5rem; }
+      .splash-subtitle { font-size: 0.9rem; }
+      .splash-icon { width: 120px; height: 120px; }
+      .progress-bar { width: 150px; }
+      .student-field-label { font-size: 0.8rem; }
+      .student-field-value { font-size: 0.9rem; }
+      .student-photo { width: 60px; height: 60px; margin-right: 0.8rem; }
+      .student-photo-preview { width: 100px; height: 100px; }
+      .zoomed-photo { max-width: 70vw; max-height: 70vh; }
+      .modal-content { padding: 1rem; }
+      .modal-title { font-size: 1rem; }
+      .modal-close { font-size: 1.2rem; top: 8px; right: 10px; }
+      th, td { padding: 0.6rem; }
+      .status-cell { flex-direction: column; gap: 0.25rem; }
+      .status-btn { width: 100%; min-width: auto; }
+      .loading-spinner { width: 35px; height: 35px; border-width: 4px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .splash-logo, button, .card, .student-photo, .modal, .status-btn, .loading-spinner {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  
+
+#install-btn {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #00cc88 0%, #ff6f61 100%);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  z-index: 3000;
+}
+  </style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="TeachMate">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- Manifest for PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f5e459">
+</head>
+<body>
+  <div id="splash-screen">
+    <div class="splash-logo">
+      <img class="splash-icon" src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Stacked Books">
+      <h1 class="splash-title">TeachMate</h1>
+    </div>
+    <p class="splash-subtitle">Your Ultimate Classroom Management Solution</p>
+    <div class="splash-progress">
+      <div class="progress-bar">
+        <div id="progress-fill"></div>
+      </div>
+      <p class="progress-text">Loading...</p>
+    </div>
+  </div>
+<button id="install-btn">Install</button>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-message" id="loading-message">Loading...</div>
+  </div>
+
+  <header>
+    <h1>TeachMate - Classroom Management</h1>
+  </header>
+
+  <div class="app-container">
+    <div id="dashboard" class="card">
+      <h2 id="welcome"></h2>
+      <div id="clock"></div>
+      <button class="nav-button" onclick="showSection('class-management')">Class Management</button>
+      <button class="nav-button" onclick="showSection('attendance')">Attendance Register</button>
+      <button class="nav-button" onclick="showSection('results')">Results Tracking</button>
+      <button class="nav-button" onclick="showSection('fees')">Fees Tracking (ZMW)</button>
+      <button id="logout-btn" class="nav-button">Logout</button>
+    </div>
+
+    <div class="content-container">
+      <div id="auth-section" class="card">
+        <h2>Login / Register</h2>
+        <div class="input-wrapper">
+          <input type="email" id="email" placeholder="Email">
+          <label>Email</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="password" id="password" placeholder="Password">
+          <label>Password</label>
+        </div>
+        <button id="login-btn">Login</button>
+        <button id="register-btn">Register</button>
+        <button id="reset-btn">Reset Password</button>
+        <p id="auth-msg"></p>
+      </div>
+
+      <div id="class-management" class="card">
+        <h2>Class Management</h2>
+        <div class="input-wrapper">
+          <input type="text" id="new-class" placeholder="Class Name">
+          <label>Class Name (e.g., Grade 9A)</label>
+        </div>
+        <button onclick="createClass()">Create Class</button>
+        <p><em>Note: Max 4 classes per teacher to keep workload manageable.</em></p>
+        <div class="input-wrapper">
+          <select id="select-class" onchange="loadStudents()">
+            <option value="" disabled selected>Select Class</option>
+          </select>
+          <label>Select Class</label>
+        </div>
+        <button class="delete-class-btn" id="delete-class-btn" onclick="deleteClass()" style="width: auto; margin: 0.5rem 0;">Delete Selected Class</button>
+        <h3>Add Student</h3>
+        <div class="input-wrapper">
+          <input type="text" id="student-id" placeholder="Student ID">
+          <label>Student ID</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="text" id="student-name" placeholder="Student Name">
+          <label>Student Name</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="tel" id="student-phone" placeholder="Parent Phone Number" pattern="\+260[0-9]{9}">
+          <label>Parent Phone Number (+260 format, optional)</label>
+        </div>
+        <div class="input-wrapper">
+          <textarea id="student-address" placeholder="Student Address"></textarea>
+          <label>Student Address (optional)</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="file" id="student-photo" accept="image/*">
+          <label>Student Photo (optional, max 1.5MB)</label>
+        </div>
+        <button onclick="addStudent()">Add Student</button>
+        <p>Parent phone numbers allow teachers to contact parents for updates or issues. Addresses help track where students are coming from. Photos aid in student identification.</p>
+        <h3>Students List</h3>
+        <ul id="students-list"></ul>
+      </div>
+
+      <div id="attendance" class="card">
+        <h2>Attendance Register</h2>
+        <div class="input-wrapper">
+          <select id="attendance-class" onchange="loadAttendanceStudents()">
+            <option value="" disabled selected>Select Class</option>
+          </select>
+          <label>Select Class</label>
+        </div>
+        <table id="attendance-table">
+          <thead><tr><th>ID</th><th>Name</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button onclick="saveAttendance()">Save Attendance</button>
+        <button onclick="clearAttendance()">Clear Attendance</button>
+        <h3>View History by Student ID</h3>
+        <div class="input-wrapper">
+          <input type="text" id="search-student-id" placeholder="Student ID">
+          <label>Student ID</label>
+        </div>
+        <button onclick="viewAttendanceHistory()">View History</button>
+        <button class="delete-all-attendance-btn" onclick="deleteAllAttendance()">Delete All Attendance</button>
+        <button class="hide-history-btn" onclick="hideAttendanceHistory()">Hide History Table</button>
+        <div id="attendance-history"></div>
+      </div>
+
+      <div id="results" class="card">
+        <h2>Results Tracking</h2>
+        <div class="input-wrapper">
+          <select id="results-class" onchange="loadResultsStudents()">
+            <option value="" disabled selected>Select Class</option>
+          </select>
+          <label>Select Class</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="text" id="subject" placeholder="Subject">
+          <label>Subject</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="text" id="test-name" placeholder="Test Name">
+          <label>Test Name</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="date" id="test-date" placeholder="Test Date">
+          <label>Test Date</label>
+        </div>
+        <table id="results-table">
+          <thead><tr><th>ID</th><th>Name</th><th>Score</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button onclick="saveResults()">Save Results</button>
+        <h3>View Results History by Student ID</h3>
+        <div class="input-wrapper">
+          <input type="text" id="results-search-student-id" placeholder="Student ID">
+          <label>Student ID</label>
+        </div>
+        <button onclick="viewResultsHistory()">View History</button>
+        <button class="delete-all-results-btn" onclick="deleteAllResults()">Delete All Results</button>
+        <button class="hide-results-history-btn" onclick="hideResultsHistory()">Hide Results History Table</button>
+        <div id="results-history"></div>
+      </div>
+
+      <div id="fees" class="card">
+        <h2>Fees Tracking (ZMW)</h2>
+        <div class="input-wrapper">
+          <select id="fees-class" onchange="loadFeesStudents()">
+            <option value="" disabled selected>Select Class</option>
+          </select>
+          <label>Select Class</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="number" id="total-fees-amount" placeholder="Total Fees Amount (ZMW)">
+          <label>Total Fees Amount per Student (ZMW)</label>
+        </div>
+        <button onclick="saveFeesConfig()">Save Total Fees Amount</button>
+        <table id="fees-table">
+          <thead><tr><th>ID</th><th>Name</th><th>Amount (ZMW)</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button onclick="saveFees()">Save Fees</button>
+        <button onclick="clearFeesInputs()">Clear</button>
+        <h3>View Fees History by Class</h3>
+        <div class="input-wrapper">
+          <select id="fees-history-class">
+            <option value="" disabled selected>Select Class</option>
+          </select>
+          <label>Select Class</label>
+        </div>
+        <div class="input-wrapper">
+          <input type="text" id="fees-search-student-id" placeholder="Student ID (optional)">
+          <label>Student ID (optional - leave blank to view all)</label>
+        </div>
+        <button onclick="viewFeesHistory()">View History</button>
+        <button class="delete-all-fees-btn" onclick="deleteAllFees()">Delete All Fees</button>
+        <button class="hide-history-btn" onclick="hideFeesHistory()">Hide History Table</button>
+        <div id="fees-history"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="photo-modal" class="modal" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closePhotoModal()" role="button" aria-label="Close photo modal">&times;</span>
+      <h2 id="modal-title" class="modal-title">Student Photo</h2>
+      <img id="zoomed-photo" class="zoomed-photo" src="" alt="Zoomed student photo">
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC3Uco6S1xyoxdgjbNtpAe_ofUtG0nI0XI",
+      authDomain: "grok-7568a.firebaseapp.com",
+      projectId: "grok-7568a",
+      storageBucket: "grok-7568a.firebasestorage.app",
+      messagingSenderId: "802272835730",
+      appId: "1:802272835730:web:f80f3c986cebbfcd51ce4b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    let currentTeacher = null;
+    let clockInterval = null;
+    const today = new Date().toISOString().split('T')[0];
+    const DB_NAME = 'TeachMateDB';
+    const DB_VERSION = 6;  // Bumped from 1 to 6 to resolve VersionError (existing DB was at version 5)
+    let db;
+
+    // Loading functions
+    function showLoading(message = 'Loading...') {
+      document.getElementById('loading-message').textContent = message;
+      document.getElementById('loading-overlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').style.display = 'none';
+    }
+
+    // Initialize IndexedDB
+    function initIndexedDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = event => {
+          db = event.target.result;
+          // Create object stores
+          if (!db.objectStoreNames.contains('classes')) {
+            db.createObjectStore('classes', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('students')) {
+            db.createObjectStore('students', { keyPath: 'className' });
+          }
+          if (!db.objectStoreNames.contains('attendance')) {
+            db.createObjectStore('attendance', { keyPath: 'className' });
+          }
+          if (!db.objectStoreNames.contains('results')) {
+            db.createObjectStore('results', { keyPath: 'className' });
+          }
+          if (!db.objectStoreNames.contains('fees')) {
+            db.createObjectStore('fees', { keyPath: 'className' });
+          }
+          if (!db.objectStoreNames.contains('feesConfig')) {
+            db.createObjectStore('feesConfig', { keyPath: 'className' });
+          }
+        };
+        request.onsuccess = event => {
+          db = event.target.result;
+          migrateLocalStorageToIndexedDB().then(() => resolve());
+        };
+        request.onerror = event => {
+          console.error('IndexedDB error:', event.target.error);
+          reject(event.target.error);
+        };
+      });
+    }
+
+    // Migrate existing localStorage data to IndexedDB
+    async function migrateLocalStorageToIndexedDB() {
+      const classes = JSON.parse(localStorage.getItem('classes') || '[]');
+      const students = JSON.parse(localStorage.getItem('students') || '{}');
+      const attendance = JSON.parse(localStorage.getItem('attendance') || '{}');
+      const results = JSON.parse(localStorage.getItem('results') || '{}');
+      const fees = JSON.parse(localStorage.getItem('fees') || '{}');
+      const feesConfig = JSON.parse(localStorage.getItem('feesConfig') || '{}');
+
+      if (classes.length || Object.keys(students).length || Object.keys(attendance).length || Object.keys(results).length || Object.keys(fees).length || Object.keys(feesConfig).length) {
+        await setIndexedDB('classes', 'classes', classes.map(cls => ({ id: cls })));
+        await Promise.all(Object.keys(students).map(className => setIndexedDB('students', className, students[className])));
+        await Promise.all(Object.keys(attendance).map(className => setIndexedDB('attendance', className, attendance[className])));
+        await Promise.all(Object.keys(results).map(className => setIndexedDB('results', className, results[className])));
+        await Promise.all(Object.keys(fees).map(className => setIndexedDB('fees', className, fees[className])));
+        await Promise.all(Object.keys(feesConfig).map(className => setIndexedDB('feesConfig', className, feesConfig[className])));
+        localStorage.clear(); // Clear localStorage after migration
+      }
+    }
+
+    // IndexedDB utility functions
+    function getIndexedDB(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = key ? store.get(key) : store.getAll();
+        request.onsuccess = () => {
+          resolve(request.result || (key ? null : []));
+        };
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function setIndexedDB(storeName, key, value) {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const data = storeName === 'classes' ? { id: key, value } : { className: key, value };
+        const request = store.put(data);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function deleteIndexedDB(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.delete(key);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function escapeHTML(str) {
+      if (typeof str !== 'string') return '';
+      return str
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/`/g, '\\`')
+        .replace(/\\/g, '\\\\');
+    }
+
+    window.showPhotoModal = function (src, studentName) {
+      const modal = document.getElementById('photo-modal');
+      const zoomedPhoto = document.getElementById('zoomed-photo');
+      const modalTitle = document.getElementById('modal-title');
+      zoomedPhoto.src = src;
+      zoomedPhoto.alt = `Zoomed photo of ${escapeHTML(studentName)}`;
+      modalTitle.textContent = `Photo of ${escapeHTML(studentName)}`;
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden', 'false');
+      document.querySelector('.modal-close').focus();
+    };
+
+    window.closePhotoModal = function () {
+      const modal = document.getElementById('photo-modal');
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+    };
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closePhotoModal();
+      }
+    });
+
+    window.startClock = function () {
+      const clock = document.getElementById('clock');
+      if (clockInterval) clearInterval(clockInterval);
+      clockInterval = setInterval(() => {
+        try {
+          clock.textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'Africa/Harare', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        } catch (error) {
+          console.error('Error updating clock:', error);
+        }
+      }, 1000);
+    };
+
+    window.loadClasses = async function () {
+      showLoading('Loading classes...');
+      try {
+        const classesData = await getIndexedDB('classes');
+        const classes = classesData.map(cls => cls.id);
+        ['select-class', 'attendance-class', 'results-class', 'fees-class', 'fees-history-class'].forEach(sel => {
+          const select = document.getElementById(sel);
+          if (select) {
+            select.innerHTML = '<option value="" disabled selected>Select Class</option>';
+            classes.forEach(cls => {
+              select.innerHTML += `<option value="${escapeHTML(cls)}">${escapeHTML(cls)}</option>`;
+            });
+          }
+        });
+        // Update delete button state
+        const deleteBtn = document.getElementById('delete-class-btn');
+        if (deleteBtn) {
+          deleteBtn.disabled = classes.length === 0;
+        }
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.showDashboard = function () {
+      document.getElementById('auth-section').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('welcome').textContent = `Welcome, ${escapeHTML(currentTeacher)}`;
+      startClock();
+      loadClasses();
+      history.pushState({ view: 'dashboard' }, '', '#dashboard');
+    };
+
+    window.showSection = function (section) {
+      if (!currentTeacher) {
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+        hideAllSections();
+        history.pushState({ view: 'auth' }, '', '#auth');
+        alert('Please log in to access this section.');
+        return;
+      }
+      hideAllSections();
+      document.getElementById(section).style.display = 'block';
+      document.getElementById('dashboard').style.display = 'block';
+      if (section === 'attendance') loadAttendanceClasses();
+      if (section === 'results') loadResultsClasses();
+      if (section === 'fees') loadFeesClasses();
+      history.pushState({ view: section }, '', `#${section}`);
+    };
+
+    window.hideAllSections = function () {
+      ['class-management', 'attendance', 'results', 'fees'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+    };
+
+    // Updated: Enforce max 4 classes
+    window.createClass = async function () {
+      const className = document.getElementById('new-class').value.trim();
+      if (!className) {
+        alert('Enter a class name');
+        return;
+      }
+      showLoading(`Creating class "${className}"...`);
+      try {
+        const classesData = await getIndexedDB('classes');
+        const classes = classesData.map(cls => cls.id);
+        if (classes.length >= 4) {
+          alert('You\'ve reached the maximum of 4 classes. Focus on your current ones to manage workload—consider deleting an old class if needed!');
+          return;
+        }
+        if (!classes.includes(className)) {
+          await setIndexedDB('classes', className, className);
+          await setIndexedDB('students', className, []);
+          await setIndexedDB('attendance', className, {});
+          await setIndexedDB('results', className, {});
+          await setIndexedDB('fees', className, {});
+          await setIndexedDB('feesConfig', className, 0);
+          loadClasses();
+          document.getElementById('new-class').value = '';
+          alert(`Class "${className}" created! You now have ${classes.length + 1} classes.`);
+        } else {
+          alert('Class already exists');
+        }
+      } finally {
+        hideLoading();
+      }
+    };
+
+    // New: Delete Class function
+    window.deleteClass = async function () {
+      const className = document.getElementById('select-class').value;
+      if (!className) {
+        alert('Please select a class to delete');
+        return;
+      }
+      if (!confirm(`Are you sure you want to delete the class "${className}"? This will permanently remove all associated students, attendance, results, and fees data for this class.`)) {
+        return;
+      }
+      showLoading(`Deleting class "${className}"...`);
+      try {
+        // Delete from classes
+        await deleteIndexedDB('classes', className);
+        // Delete related data
+        await deleteIndexedDB('students', className);
+        await deleteIndexedDB('attendance', className);
+        await deleteIndexedDB('results', className);
+        await deleteIndexedDB('fees', className);
+        await deleteIndexedDB('feesConfig', className);
+        loadClasses();
+        loadStudents(); // Clear students list
+        alert(`Class "${className}" and all its data have been deleted.`);
+      } catch (error) {
+        console.error('Error deleting class:', error);
+        alert('Error deleting class. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.loadStudents = async function () {
+      showLoading('Loading students...');
+      try {
+        const className = document.getElementById('select-class').value;
+        const list = document.getElementById('students-list');
+        list.innerHTML = '';
+        if (!className) {
+          list.innerHTML = '<li>No class selected</li>';
+          return;
+        }
+        const studentsData = await getIndexedDB('students', className);
+        const classStudents = studentsData ? studentsData.value : [];
+        const fragment = document.createDocumentFragment();
+        if (!classStudents.length) {
+          const li = document.createElement('li');
+          li.textContent = 'No students found';
+          fragment.appendChild(li);
+        } else {
+          classStudents.forEach(s => {
+            if (s && s.id && s.name) {
+              const li = document.createElement('li');
+              li.className = 'student-item';
+              const phoneDisplay = s.phone ? `<a href="tel:${escapeHTML(s.phone)}">${escapeHTML(s.phone)}</a>` : '<span class="no-data">No phone</span>';
+              const addressDisplay = s.address ? escapeHTML(s.address) : '<span class="no-data">No address</span>';
+              const photoDisplay = s.photo ? `<img src="${escapeHTML(s.photo)}" class="student-photo" alt="${escapeHTML(s.name)}'s photo">` : '<span class="no-data">No photo</span>';
+              li.innerHTML = `
+                <div class="student-details">
+                  <div class="student-field">
+                    <span class="student-field-label">Photo:</span>
+                    <span class="student-field-value">${photoDisplay}</span>
+                  </div>
+                  <div class="student-field">
+                    <span class="student-field-label">ID:</span>
+                    <span class="student-field-value">${escapeHTML(s.id)}</span>
+                  </div>
+                  <div class="student-field">
+                    <span class="student-field-label">Name:</span>
+                    <span class="student-field-value">${escapeHTML(s.name)}</span>
+                  </div>
+                  <div class="student-field">
+                    <span class="student-field-label">Phone:</span>
+                    <span class="student-field-value">${phoneDisplay}</span>
+                  </div>
+                  <div class="student-field">
+                    <span class="student-field-label">Address:</span>
+                    <span class="student-field-value">${addressDisplay}</span>
+                  </div>
+                </div>
+                <div class="student-actions"></div>`;
+              const actions = li.querySelector('.student-actions');
+              const editPhoneBtn = document.createElement('button');
+              editPhoneBtn.className = 'edit-phone-btn';
+              editPhoneBtn.textContent = 'Edit Phone';
+              editPhoneBtn.addEventListener('click', () => editStudentPhone(className, s.id));
+              actions.appendChild(editPhoneBtn);
+              const editAddressBtn = document.createElement('button');
+              editAddressBtn.className = 'edit-address-btn';
+              editAddressBtn.textContent = 'Edit Address';
+              editAddressBtn.addEventListener('click', () => editStudentAddress(className, s.id));
+              actions.appendChild(editAddressBtn);
+              const editPhotoBtn = document.createElement('button');
+              editPhotoBtn.className = 'edit-photo-btn';
+              editPhotoBtn.textContent = 'Edit Photo';
+              editPhotoBtn.addEventListener('click', () => editStudentPhoto(className, s.id));
+              actions.appendChild(editPhotoBtn);
+              const deleteBtn = document.createElement('button');
+              deleteBtn.className = 'delete-btn';
+              deleteBtn.textContent = 'Delete';
+              deleteBtn.addEventListener('click', () => deleteStudent(className, s.id));
+              actions.appendChild(deleteBtn);
+              if (s.photo) {
+                li.querySelector('.student-photo').addEventListener('click', () => showPhotoModal(s.photo, s.name));
+              }
+              fragment.appendChild(li);
+            }
+          });
+        }
+        list.appendChild(fragment);
+      } finally {
+        hideLoading();
+      }
+    };
+
+window.addStudent = async function() {
+  const className = document.getElementById('select-class').value;
+  const id = document.getElementById('student-id').value.trim();
+  const name = document.getElementById('student-name').value.trim();
+  const phone = document.getElementById('student-phone').value.trim();
+  const address = document.getElementById('student-address').value.trim();
+  const photoInput = document.getElementById('student-photo');
+  if (!className) {
+    alert('Please select a class');
+    return;
+  }
+  if (!id || !name) {
+    alert('Fill Student ID and Name');
+    return;
+  }
+  if (phone && !/\+260[0-9]{9}/.test(phone)) {
+    alert('Phone number must be in +260 format (e.g., +260123456789)');
+    return;
+  }
+  
+  // Check for duplicate ID across all classes
+  showLoading('Checking for duplicate student ID...');
+  let duplicateClass = null;
+  try {
+    const classesData = await getIndexedDB('classes');
+    const allClasses = classesData ? classesData.map(cls => cls.id) : [];
+    for (const cls of allClasses) {
+      const studentsData = await getIndexedDB('students', cls);
+      const classStudents = studentsData ? studentsData.value : [];
+      if (classStudents.find(s => s && s.id === id)) {
+        duplicateClass = cls;
+        break;
+      }
+    }
+  } catch (error) {
+    console.error('Error checking duplicates:', error);
+    hideLoading();
+    alert('Error checking for duplicates. Please try again.');
+    return;
+  } finally {
+    // Always hide after duplicate check, regardless of outcome
+    if (duplicateClass) {
+      hideLoading();
+    }
+  }
+  
+  if (duplicateClass) {
+    alert(`Student ID "${id}" already exists in class "${duplicateClass}". Please use a unique Student ID across all classes.`);
+    return;
+  }
+  
+  let photo = '';
+  if (photoInput.files && photoInput.files[0]) {
+    if (photoInput.files[0].size > 1.5 * 1024 * 1024) {
+      alert('Photo size must be less than 1.5MB');
+      return;
+    }
+    showLoading('Processing photo and adding student...');
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        photo = e.target.result;
+        const studentsData = await getIndexedDB('students', className);
+        let classStudents = studentsData ? studentsData.value : [];
+        classStudents.push({ id, name, phone, address, photo });
+        await setIndexedDB('students', className, classStudents);
+        document.getElementById('student-id').value = '';
+        document.getElementById('student-name').value = '';
+        document.getElementById('student-phone').value = '';
+        document.getElementById('student-address').value = '';
+        photoInput.value = '';
+        await loadStudents();
+        const feesData = await getIndexedDB('fees', className);
+        let classFees = feesData ? feesData.value : {};
+        if (!Array.isArray(classFees[id])) {
+          classFees[id] = [];
+          await setIndexedDB('fees', className, classFees);
+        }
+        alert(`Student "${name}" added successfully!`);
+      } catch (error) {
+        console.error('Error adding student with photo:', error);
+        alert('Error adding student. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+    reader.onerror = function() {
+      hideLoading();
+      alert('Error reading photo file');
+    };
+    reader.readAsDataURL(photoInput.files[0]);
+  } else {
+    showLoading('Adding student...');
+    try {
+      const studentsData = await getIndexedDB('students', className);
+      let classStudents = studentsData ? studentsData.value : [];
+      classStudents.push({ id, name, phone, address, photo });
+      await setIndexedDB('students', className, classStudents);
+      document.getElementById('student-id').value = '';
+      document.getElementById('student-name').value = '';
+      document.getElementById('student-phone').value = '';
+      document.getElementById('student-address').value = '';
+      photoInput.value = '';
+      await loadStudents();
+      const feesData = await getIndexedDB('fees', className);
+      let classFees = feesData ? feesData.value : {};
+      if (!Array.isArray(classFees[id])) {
+        classFees[id] = [];
+        await setIndexedDB('fees', className, classFees);
+      }
+      alert(`Student "${name}" added successfully!`);
+    } catch (error) {
+      console.error('Error adding student:', error);
+      alert('Error adding student. Please try again.');
+    } finally {
+      hideLoading();
+    }
+  }
+};
+    window.editStudentPhone = async function (className, studentId) {
+      const newPhone = prompt('Enter new parent phone number (+260 format, optional):', '');
+      if (newPhone && !/\+260[0-9]{9}/.test(newPhone)) {
+        alert('Phone number must be in +260 format (e.g., +260123456789)');
+        return;
+      }
+      showLoading('Updating phone number...');
+      try {
+        const studentsData = await getIndexedDB('students', className);
+        let classStudents = studentsData ? studentsData.value : [];
+        const student = classStudents.find(s => s && s.id === studentId);
+        if (student) {
+          student.phone = newPhone || '';
+          await setIndexedDB('students', className, classStudents);
+          loadStudents();
+          alert('Phone number updated successfully!');
+        } else {
+          alert('Student not found');
+        }
+      } catch (error) {
+        console.error('Error updating phone:', error);
+        alert('Error updating phone. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.editStudentAddress = async function (className, studentId) {
+      const studentsData = await getIndexedDB('students', className);
+      let classStudents = studentsData ? studentsData.value : [];
+      const student = classStudents.find(s => s && s.id === studentId);
+      const currentAddress = student && student.address ? student.address : '';
+      const newAddress = prompt(`Enter new address for ${studentId} in ${className} (leave blank to clear):`, currentAddress);
+      if (newAddress === null) return;
+      showLoading('Updating address...');
+      try {
+        if (student) {
+          student.address = newAddress || '';
+          await setIndexedDB('students', className, classStudents);
+          loadStudents();
+          alert('Address updated successfully!');
+        } else {
+          alert('Student not found');
+        }
+      } catch (error) {
+        console.error('Error updating address:', error);
+        alert('Error updating address. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.editStudentPhoto = async function (className, studentId) {
+      const photoInput = document.createElement('input');
+      photoInput.type = 'file';
+      photoInput.accept = 'image/*';
+      photoInput.onchange = async function () {
+        if (photoInput.files && photoInput.files[0]) {
+          if (photoInput.files[0].size > 1.5 * 1024 * 1024) {
+            alert('Photo size must be less than 1.5MB');
+            return;
+          }
+          showLoading('Processing photo update...');
+          const reader = new FileReader();
+          reader.onload = async function (e) {
+            try {
+              const newPhoto = e.target.result;
+              const studentsData = await getIndexedDB('students', className);
+              let classStudents = studentsData ? studentsData.value : [];
+              const student = classStudents.find(s => s && s.id === studentId);
+              if (student) {
+                student.photo = newPhoto || '';
+                await setIndexedDB('students', className, classStudents);
+                loadStudents();
+                alert('Photo updated successfully!');
+              } else {
+                alert('Student not found');
+              }
+            } finally {
+              hideLoading();
+            }
+          };
+          reader.onerror = function () {
+            hideLoading();
+            alert('Error reading photo file');
+          };
+          reader.readAsDataURL(photoInput.files[0]);
+        }
+      };
+      photoInput.click();
+    };
+
+    window.deleteStudent = async function (className, studentId) {
+      if (!confirm(`Are you sure you want to delete student ${studentId} from ${className}? This will remove their attendance, results, and fees data.`)) {
+        return;
+      }
+      showLoading(`Deleting student ${studentId}...`);
+      try {
+        const studentsData = await getIndexedDB('students', className);
+        let classStudents = studentsData ? studentsData.value : [];
+        classStudents = classStudents.filter(s => s && s.id !== studentId);
+        await setIndexedDB('students', className, classStudents);
+
+        const attendanceData = await getIndexedDB('attendance', className);
+        let classAttendance = attendanceData ? attendanceData.value : {};
+        Object.keys(classAttendance).forEach(date => {
+          classAttendance[date] = classAttendance[date].filter(rec => rec.id !== studentId);
+          if (!classAttendance[date].length) {
+            delete classAttendance[date];
+          }
+        });
+        await setIndexedDB('attendance', className, classAttendance);
+
+        const resultsData = await getIndexedDB('results', className);
+        let classResults = resultsData ? resultsData.value : {};
+        Object.keys(classResults).forEach(subject => {
+          Object.keys(classResults[subject]).forEach(test => {
+            delete classResults[subject][test].scores[studentId];
+            if (!Object.keys(classResults[subject][test].scores).length) {
+              delete classResults[subject][test];
+            }
+          });
+          if (!Object.keys(classResults[subject]).length) {
+            delete classResults[subject];
+          }
+        });
+        await setIndexedDB('results', className, classResults);
+
+        const feesData = await getIndexedDB('fees', className);
+        let classFees = feesData ? feesData.value : {};
+        delete classFees[studentId];
+        await setIndexedDB('fees', className, classFees);
+
+        loadStudents();
+        alert(`Student ${studentId} deleted successfully!`);
+      } catch (error) {
+        console.error('Error deleting student:', error);
+        alert('Error deleting student. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.loadAttendanceClasses = function () { loadClasses(); };
+
+    window.loadAttendanceStudents = async function () {
+      showLoading('Loading attendance register...');
+      try {
+        const className = document.getElementById('attendance-class').value;
+        const tbody = document.querySelector('#attendance-table tbody');
+        tbody.innerHTML = '';
+        if (!className) return;
+        const studentsData = await getIndexedDB('students', className);
+        const classStudents = studentsData ? studentsData.value : [];
+        const attendanceData = await getIndexedDB('attendance', className);
+        const classAttendance = attendanceData ? attendanceData.value : {};
+        const todayAttendance = classAttendance[today] || [];
+        const todayMap = new Map(todayAttendance.map(rec => [rec.id, rec.present]));
+        const fragment = document.createDocumentFragment();
+        classStudents.forEach(s => {
+          if (s && s.id && s.name) {
+            const photoDisplay = s.photo ? `<img src="${escapeHTML(s.photo)}" class="student-photo" alt="${escapeHTML(s.name)}'s photo">` : '<span class="no-data">No photo</span>';
+            const tr = document.createElement('tr');
+            const isPresent = todayMap.get(s.id);
+            let activeClass = '';
+            if (isPresent !== undefined) {
+              activeClass = isPresent ? 'present-btn' : 'absent-btn';
+            }
+            tr.innerHTML = `<td>${escapeHTML(s.id)}</td>
+              <td>${photoDisplay} ${escapeHTML(s.name)}</td>
+              <td class="status-cell">
+                <button class="status-btn present-btn ${activeClass === 'present-btn' ? 'active' : ''}" data-id="${escapeHTML(s.id)}" data-status="present">Present ✅</button>
+                <button class="status-btn absent-btn ${activeClass === 'absent-btn' ? 'active' : ''}" data-id="${escapeHTML(s.id)}" data-status="absent">Absent ❌</button>
+              </td>`;
+            if (s.photo) {
+              tr.querySelector('.student-photo').addEventListener('click', () => showPhotoModal(s.photo, s.name));
+            }
+            fragment.appendChild(tr);
+          }
+        });
+        tbody.appendChild(fragment);
+        // Add event listeners for status buttons
+        document.querySelectorAll('#attendance-table .status-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const status = this.dataset.status;
+            const id = this.dataset.id;
+            // Remove active from all buttons for this student
+            document.querySelectorAll(`[data-id="${id}"]`).forEach(b => b.classList.remove('active'));
+            // Add active to clicked
+            this.classList.add('active');
+          });
+        });
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.saveAttendance = async function () {
+      const className = document.getElementById('attendance-class').value;
+      if (!className) {
+        alert('Select a class');
+        return;
+      }
+      showLoading('Saving attendance...');
+      try {
+        const attendanceData = await getIndexedDB('attendance', className);
+        let classAttendance = attendanceData ? attendanceData.value : {};
+        const date = today;
+        classAttendance[date] = [];
+        document.querySelectorAll('#attendance-table .status-btn.active').forEach(btn => {
+          const id = btn.dataset.id;
+          const present = btn.dataset.status === 'present';
+          classAttendance[date].push({ id, present });
+        });
+        await setIndexedDB('attendance', className, classAttendance);
+        alert('Attendance saved for ' + date);
+        loadAttendanceStudents();
+      } catch (error) {
+        console.error('Error saving attendance:', error);
+        alert('Error saving attendance. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.clearAttendance = function () {
+      document.querySelectorAll('#attendance-table .status-btn').forEach(btn => btn.classList.remove('active'));
+    };
+
+    window.viewAttendanceHistory = async function () {
+      showLoading('Loading attendance history...');
+      try {
+        const className = document.getElementById('attendance-class').value;
+        if (!className) {
+          alert('Select a class');
+          return;
+        }
+        const studentId = document.getElementById('search-student-id').value.trim();
+        const historyDiv = document.getElementById('attendance-history');
+        const attendanceData = await getIndexedDB('attendance', className);
+        const classAttendance = attendanceData ? attendanceData.value : {};
+        const studentsData = await getIndexedDB('students', className);
+        const classStudents = studentsData ? studentsData.value : [];
+        const studentMap = new Map();
+        classStudents.forEach(student => {
+          if (student && student.id) {
+            studentMap.set(student.id, student);
+          }
+        });
+        let found = false;
+        const fragment = document.createDocumentFragment();
+        const table = document.createElement('table');
+        table.innerHTML = '<thead><tr><th>Date</th><th>ID</th><th>Name</th><th>Status</th><th>Action</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        Object.keys(classAttendance).sort().reverse().forEach(date => {
+          classAttendance[date].forEach(rec => {
+            if (!studentId || rec.id === studentId) {
+              found = true;
+              const stu = studentMap.get(rec.id);
+              const status = rec.present ? '<span class="present">Present ✅</span>' : '<span class="absent">Absent ❌</span>';
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<td>${escapeHTML(date)}</td><td>${escapeHTML(rec.id)}</td><td>${stu ? escapeHTML(stu.name) : ''}</td><td>${status}</td><td class="action-cell"></td>`;
+              const actionCell = tr.querySelector('.action-cell');
+              const editBtn = document.createElement('button');
+              editBtn.className = 'edit-attendance-btn';
+              editBtn.textContent = 'Edit';
+              editBtn.addEventListener('click', () => editAttendanceRecord(className, rec.id, date));
+              actionCell.appendChild(editBtn);
+              const deleteBtn = document.createElement('button');
+              deleteBtn.className = 'delete-btn';
+              deleteBtn.textContent = 'Delete';
+              deleteBtn.addEventListener('click', () => deleteAttendanceRecord(className, rec.id, date));
+              actionCell.appendChild(deleteBtn);
+              tbody.appendChild(tr);
+            }
+          });
+        });
+        if (!found) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td colspan="5">No attendance records found</td>';
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        fragment.appendChild(table);
+        historyDiv.innerHTML = '';
+        historyDiv.appendChild(fragment);
+        historyDiv.style.display = 'block';
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.editAttendanceRecord = async function (className, studentId, date) {
+      const attendanceData = await getIndexedDB('attendance', className);
+      let classAttendance = attendanceData ? attendanceData.value : {};
+      if (!classAttendance[date]) {
+        alert('Error: Attendance record not found');
+        return;
+      }
+      const record = classAttendance[date].find(rec => rec.id === studentId);
+      if (!record) {
+        alert('Error: Attendance record not found');
+        return;
+      }
+      const currentStatus = record.present;
+      const newStatus = prompt(`Enter new attendance status for ${studentId} on ${date} in ${className} (current: ${currentStatus ? 'Present' : 'Absent'}):`, currentStatus ? 'Present' : 'Absent');
+      if (newStatus === null) return;
+      const cleanedStatus = (newStatus || '').trim().toLowerCase();
+      let parsedStatus;
+      if (['present', 'p'].includes(cleanedStatus)) {
+        parsedStatus = true;
+      } else if (['absent', 'a'].includes(cleanedStatus)) {
+        parsedStatus = false;
+      } else {
+        alert('Please enter "Present", "P", "Absent", or "A" (case-insensitive)');
+        return;
+      }
+      showLoading('Updating attendance record...');
+      try {
+        record.present = parsedStatus;
+        await setIndexedDB('attendance', className, classAttendance);
+        alert(`Attendance updated for ${studentId} on ${date} to ${parsedStatus ? 'Present' : 'Absent'}`);
+        viewAttendanceHistory();
+      } catch (error) {
+        console.error('Error updating attendance:', error);
+        alert('Error updating attendance. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.deleteAttendanceRecord = async function (className, studentId, date) {
+      if (!confirm(`Are you sure you want to delete the attendance record for ${studentId} on ${date} in ${className}?`)) {
+        return;
+      }
+      showLoading('Deleting attendance record...');
+      try {
+        const attendanceData = await getIndexedDB('attendance', className);
+        let classAttendance = attendanceData ? attendanceData.value : {};
+        if (classAttendance[date]) {
+          classAttendance[date] = classAttendance[date].filter(rec => rec.id !== studentId);
+          if (!classAttendance[date].length) {
+            delete classAttendance[date];
+          }
+          await setIndexedDB('attendance', className, classAttendance);
+          alert(`Attendance record deleted for ${studentId} on ${date}`);
+          viewAttendanceHistory();
+        } else {
+          alert('Error: Attendance record not found');
+        }
+      } catch (error) {
+        console.error('Error deleting attendance record:', error);
+        alert('Error deleting attendance record. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.deleteAllAttendance = async function () {
+      const className = document.getElementById('attendance-class').value;
+      if (!className) {
+        alert('Select a class');
+        return;
+      }
+      const studentId = document.getElementById('search-student-id').value.trim();
+      let message = studentId
+        ? `Are you sure you want to delete all attendance records for student ${studentId} in ${className}?`
+        : `Are you sure you want to delete all attendance records for all students in ${className}?`;
+      if (!confirm(message)) {
+        return;
+      }
+      showLoading('Deleting attendance records...');
+      try {
+        const attendanceData = await getIndexedDB('attendance', className);
+        let classAttendance = attendanceData ? attendanceData.value : {};
+        if (studentId) {
+          Object.keys(classAttendance).forEach(date => {
+            classAttendance[date] = classAttendance[date].filter(rec => rec.id !== studentId);
+            if (!classAttendance[date].length) {
+              delete classAttendance[date];
+            }
+          });
+        } else {
+          classAttendance = {};
+        }
+        await setIndexedDB('attendance', className, classAttendance);
+        alert(studentId ? `All attendance records deleted for ${studentId} in ${className}` : `All attendance records deleted for ${className}`);
+        viewAttendanceHistory();
+        loadAttendanceStudents();
+      } catch (error) {
+        console.error('Error deleting attendance:', error);
+        alert('Error deleting attendance. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.hideAttendanceHistory = function () {
+      document.getElementById('attendance-history').style.display = 'none';
+    };
+
+    window.loadResultsClasses = function () { loadClasses(); };
+
+    window.loadResultsStudents = async function () {
+      showLoading('Loading results table...');
+      try {
+        const className = document.getElementById('results-class').value;
+        const tbody = document.querySelector('#results-table tbody');
+        tbody.innerHTML = '';
+        if (!className) return;
+        const studentsData = await getIndexedDB('students', className);
+        const classStudents = studentsData ? studentsData.value : [];
+        const fragment = document.createDocumentFragment();
+        classStudents.forEach(s => {
+          if (s && s.id && s.name) {
+            const photoDisplay = s.photo ? `<img src="${escapeHTML(s.photo)}" class="student-photo" alt="${escapeHTML(s.name)}'s photo">` : '<span class="no-data">No photo</span>';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${escapeHTML(s.id)}</td>
+              <td>${photoDisplay} ${escapeHTML(s.name)}</td>
+              <td><input type="number" min="0" max="100" data-id="${escapeHTML(s.id)}" placeholder="0-100"></td>`;
+            if (s.photo) {
+              tr.querySelector('.student-photo').addEventListener('click', () => showPhotoModal(s.photo, s.name));
+            }
+            fragment.appendChild(tr);
+          }
+        });
+        tbody.appendChild(fragment);
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.saveResults = async function () {
+      const className = document.getElementById('results-class').value;
+      const subject = document.getElementById('subject').value.trim();
+      const testName = document.getElementById('test-name').value.trim();
+      const date = document.getElementById('test-date').value || today;
+      if (!className || !subject || !testName) {
+        alert('Fill all fields');
+        return;
+      }
+      showLoading('Saving results...');
+      try {
+        const resultsData = await getIndexedDB('results', className);
+        let classResults = resultsData ? resultsData.value : {};
+        if (!classResults[subject]) classResults[subject] = {};
+        classResults[subject][testName] = { date, scores: {} };
+        document.querySelectorAll('#results-table input[type="number"]').forEach(inp => {
+          const score = parseInt(inp.value);
+          if (!isNaN(score)) classResults[subject][testName].scores[inp.dataset.id] = score;
+        });
+        await setIndexedDB('results', className, classResults);
+        alert('Results saved for ' + testName + ' on ' + date);
+        loadResultsStudents();
+        document.getElementById('subject').value = '';
+        document.getElementById('test-name').value = '';
+        document.getElementById('test-date').value = '';
+      } catch (error) {
+        console.error('Error saving results:', error);
+        alert('Error saving results. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.viewResultsHistory = async function () {
+      showLoading('Loading results history...');
+      try {
+        const className = document.getElementById('results-class').value;
+        if (!className) {
+          alert('Select a class');
+          return;
+        }
+        const studentId = document.getElementById('results-search-student-id').value.trim();
+        const historyDiv = document.getElementById('results-history');
+        const resultsData = await getIndexedDB('results', className);
+        const classResults = resultsData ? resultsData.value : {};
+        const studentsData = await getIndexedDB('students', className);
+        const classStudents = studentsData ? studentsData.value : [];
+        const studentMap = new Map();
+        classStudents.forEach(student => {
+          if (student && student.id) {
+            studentMap.set(student.id, student);
+          }
+        });
+        let found = false;
+        const fragment = document.createDocumentFragment();
+        const table = document.createElement('table');
+        table.innerHTML = '<thead><tr><th>Date</th><th>Subject</th><th>Test</th><th>ID</th><th>Name</th><th>Score</th><th>Remarks</th><th>Action</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        Object.keys(classResults).forEach(subject => {
+          Object.keys(classResults[subject]).sort().reverse().forEach(test => {
+            const testData = classResults[subject][test];
+            Object.keys(testData.scores).forEach(id => {
+              if (!studentId || id === studentId) {
+                found = true;
+                const stu = studentMap.get(id);
+                const score = testData.scores[id];
+                let remark = score >= 75 ? '<span class="good">Excellent</span>' :
+                             score >= 50 ? '<span class="average">Average</span>' :
+                             '<span class="poor">Poor</span>';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${escapeHTML(testData.date)}</td><td>${escapeHTML(subject)}</td><td>${escapeHTML(test)}</td><td>${escapeHTML(id)}</td><td>${stu ? escapeHTML(stu.name) : ''}</td><td>${score}</td><td>${remark}</td><td class="action-cell"></td>`;
+                const actionCell = tr.querySelector('.action-cell');
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-score-btn';
+                editBtn.textContent = 'Edit Score';
+                editBtn.addEventListener('click', () => editResultScore(className, id, subject, test, score));
+                actionCell.appendChild(editBtn);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-result-btn';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => deleteResultRecord(className, id, subject, test));
+                actionCell.appendChild(deleteBtn);
+                tbody.appendChild(tr);
+              }
+            });
+          });
+        });
+        if (!found) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td colspan="8">No results found</td>';
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        fragment.appendChild(table);
+        historyDiv.innerHTML = '';
+        historyDiv.appendChild(fragment);
+        historyDiv.style.display = 'block';
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.editResultScore = async function (className, studentId, subject, testName, currentScore) {
+      const newScore = prompt(`Enter new score for ${studentId} in ${subject} for ${testName} in ${className} (current: ${currentScore}):`, currentScore);
+      if (newScore === null) return;
+      const parsedScore = parseInt(newScore);
+      if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 100) {
+        alert('Please enter a valid score between 0 and 100');
+        return;
+      }
+      showLoading('Updating score...');
+      try {
+        const resultsData = await getIndexedDB('results', className);
+        let classResults = resultsData ? resultsData.value : {};
+        if (classResults[subject] && classResults[subject][testName]) {
+          classResults[subject][testName].scores[studentId] = parsedScore;
+          await setIndexedDB('results', className, classResults);
+          alert(`Score updated to ${parsedScore} for ${studentId} in ${subject} for ${testName}`);
+          viewResultsHistory();
+        } else {
+          alert('Error: Result record not found');
+        }
+      } catch (error) {
+        console.error('Error updating score:', error);
+        alert('Error updating score. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.deleteResultRecord = async function (className, studentId, subject, testName) {
+      if (!confirm(`Are you sure you want to delete the result for student ${studentId} in ${subject} for test ${testName} in ${className}?`)) {
+        return;
+      }
+      showLoading('Deleting result record...');
+      try {
+        const resultsData = await getIndexedDB('results', className);
+        let classResults = resultsData ? resultsData.value : {};
+        if (classResults[subject] && classResults[subject][testName]) {
+          delete classResults[subject][testName].scores[studentId];
+          if (!Object.keys(classResults[subject][testName].scores).length) {
+            delete classResults[subject][testName];
+          }
+          if (!Object.keys(classResults[subject]).length) {
+            delete classResults[subject];
+          }
+          await setIndexedDB('results', className, classResults);
+          alert(`Result deleted for ${studentId} in ${subject} for ${testName}`);
+          viewResultsHistory();
+        } else {
+          alert('Error: Result record not found');
+        }
+      } catch (error) {
+        console.error('Error deleting result:', error);
+        alert('Error deleting result. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.deleteAllResults = async function () {
+      const className = document.getElementById('results-class').value;
+      if (!className) {
+        alert('Select a class');
+        return;
+      }
+      const studentId = document.getElementById('results-search-student-id').value.trim();
+      let message = studentId
+        ? `Are you sure you want to delete all results for student ${studentId} in ${className}?`
+        : `Are you sure you want to delete all results for all students in ${className}?`;
+      if (!confirm(message)) {
+        return;
+      }
+      showLoading('Deleting results...');
+      try {
+        const resultsData = await getIndexedDB('results', className);
+        let classResults = resultsData ? resultsData.value : {};
+        if (studentId) {
+          Object.keys(classResults).forEach(subject => {
+            Object.keys(classResults[subject]).forEach(test => {
+              delete classResults[subject][test].scores[studentId];
+              if (!Object.keys(classResults[subject][test].scores).length) {
+                delete classResults[subject][test];
+              }
+            });
+            if (!Object.keys(classResults[subject]).length) {
+              delete classResults[subject];
+            }
+          });
+        } else {
+          classResults = {};
+        }
+        await setIndexedDB('results', className, classResults);
+        alert(studentId ? `All results deleted for ${studentId} in ${className}` : `All results deleted for ${className}`);
+        viewResultsHistory();
+        loadResultsStudents();
+      } catch (error) {
+        console.error('Error deleting results:', error);
+        alert('Error deleting results. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.hideResultsHistory = function () {
+      document.getElementById('results-history').style.display = 'none';
+    };
+
+    window.loadFeesClasses = function () { loadClasses(); };
+
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    window.loadFeesStudents = async function () {
+      showLoading('Loading fees table...');
+      try {
+        const className = document.getElementById('fees-class').value;
+        const tbody = document.querySelector('#fees-table tbody');
+        const totalFeesInput = document.getElementById('total-fees-amount');
+        tbody.innerHTML = '';
+        if (!className) {
+          totalFeesInput.value = '';
+          return;
+        }
+        const studentsData = await getIndexedDB('students', className);
+        const classStudents = studentsData ? studentsData.value : [];
+        const feesData = await getIndexedDB('fees', className);
+        const classFees = feesData ? feesData.value : {};
+        const feesConfigData = await getIndexedDB('feesConfig', className);
+        const totalFullAmount = feesConfigData && Number.isFinite(feesConfigData.value) ? feesConfigData.value : 0;
+        totalFeesInput.value = totalFullAmount > 0 ? totalFullAmount : '';
+        const fragment = document.createDocumentFragment();
+        classStudents.forEach(s => {
+          if (s && s.id && s.name) {
+            const photoDisplay = s.photo ? `<img src="${escapeHTML(s.photo)}" class="student-photo" alt="${escapeHTML(s.name)}'s photo">` : '<span class="no-data">No photo</span>';
+            const feeData = Array.isArray(classFees[s.id]) ? classFees[s.id] : [];
+            const totalPaid = feeData.reduce((sum, fee) => sum + (Number.isFinite(fee.amount) ? fee.amount : 0), 0);
+            let status;
+            if (totalFullAmount > 0 && totalPaid >= totalFullAmount) {
+              status = '<span class="paid">Fully Paid ✅</span>';
+            } else if (totalPaid > 0) {
+              status = '<span class="outstanding">Paid with Outstanding Balance</span>';
+            } else {
+              status = '<span class="unpaid">Not Paid Yet ❌</span>';
+            }
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${escapeHTML(s.id)}</td>
+              <td>${photoDisplay} ${escapeHTML(s.name)}</td>
+              <td><input type="number" data-id="${escapeHTML(s.id)}" value="" placeholder="Amount (ZMW)"></td>
+              <td class="status-cell">${status}</td>`;
+            if (s.photo) {
+              tr.querySelector('.student-photo').addEventListener('click', () => showPhotoModal(s.photo, s.name));
+            }
+            fragment.appendChild(tr);
+          }
+        });
+        tbody.appendChild(fragment);
+        document.querySelectorAll('#fees-table input[type="number"]').forEach(inp => {
+          inp.addEventListener('input', debounce(updateStatus, 300));
+        });
+      } finally {
+        hideLoading();
+      }
+    };
+
+    function updateStatus(event) {
+      const row = event.target.closest('tr');
+      const statusCell = row.querySelector('.status-cell');
+      const amountInput = row.querySelector('input[type="number"]');
+      const currentAmount = parseFloat(amountInput.value) || 0;
+      const className = document.getElementById('fees-class').value;
+      getIndexedDB('feesConfig', className).then(feesConfigData => {
+        const totalFullAmount = feesConfigData && Number.isFinite(feesConfigData.value) ? feesConfigData.value : 0;
+        // Fix: Include historical total for accurate preview
+        getIndexedDB('fees', className).then(feesData => {
+          const classFees = feesData ? feesData.value : {};
+          const id = amountInput.dataset.id;
+          const feeData = Array.isArray(classFees[id]) ? classFees[id] : [];
+          const historicalTotal = feeData.reduce((sum, fee) => sum + (Number.isFinite(fee.amount) ? fee.amount : 0), 0);
+          const previewTotal = historicalTotal + currentAmount;
+          let statusHtml;
+          if (totalFullAmount > 0 && Math.abs(previewTotal - totalFullAmount) < 0.01) {
+            statusHtml = '<span class="paid">Fully Paid ✅</span>';
+          } else if (previewTotal > 0) {
+            statusHtml = '<span class="outstanding">Paid with Outstanding Balance</span>';
+          } else {
+            statusHtml = '<span class="unpaid">Not Paid Yet ❌</span>';
+          }
+          statusCell.innerHTML = statusHtml;
+        });
+      });
+    }
+
+    window.clearFeesInputs = function () {
+      const rows = document.querySelectorAll('#fees-table tbody tr');
+      rows.forEach(row => {
+        const inp = row.querySelector('input[type="number"]');
+        if (inp) inp.value = '';
+        const cell = row.querySelector('.status-cell');
+        if (cell) cell.innerHTML = '<span class="unpaid">Not Paid Yet ❌</span>';
+      });
+    };
+
+    window.saveFeesConfig = async function () {
+      const className = document.getElementById('fees-class').value;
+      const totalFees = parseFloat(document.getElementById('total-fees-amount').value);
+      if (!className) {
+        alert('Select a class');
+        return;
+      }
+      if (isNaN(totalFees) || totalFees < 0) {
+        alert('Enter a valid total fees amount');
+        return;
+      }
+      showLoading('Saving fees configuration...');
+      try {
+        await setIndexedDB('feesConfig', className, totalFees);
+        alert(`Total fees amount set to ${totalFees} ZMW for ${className}`);
+        loadFeesStudents();
+      } catch (error) {
+        console.error('Error saving fees config:', error);
+        alert('Error saving fees config. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.saveFees = async function () {
+      const className = document.getElementById('fees-class').value;
+      if (!className) {
+        alert('Select a class');
+        return;
+      }
+      showLoading('Saving fees...');
+      try {
+        const feesData = await getIndexedDB('fees', className);
+        let classFees = feesData ? feesData.value : {};
+        const date = today;
+        let hasValidInput = false;
+        document.querySelectorAll('#fees-table input[type="number"]').forEach(inp => {
+          const amount = parseFloat(inp.value);
+          const id = inp.dataset.id;
+          if (!isNaN(amount) && amount > 0) {
+            hasValidInput = true;
+            if (!Array.isArray(classFees[id])) {
+              classFees[id] = [];
+            }
+            classFees[id].push({ amount, date });
+          }
+        });
+        if (!hasValidInput) {
+          alert('Enter at least one valid fee amount');
+          return;
+        }
+        await setIndexedDB('fees', className, classFees);
+        alert('Fees saved for ' + date);
+        loadFeesStudents();
+      } catch (error) {
+        console.error('Error saving fees:', error);
+        alert('Error saving fees. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.viewFeesHistory = async function () {
+      showLoading('Loading fees history...');
+      try {
+        const className = document.getElementById('fees-history-class').value;
+        if (!className) {
+          alert('Please select a class to view fees history');
+          return;
+        }
+        const studentId = document.getElementById('fees-search-student-id').value.trim();
+        const historyDiv = document.getElementById('fees-history');
+        const feesData = await getIndexedDB('fees', className);
+        const classFees = feesData ? feesData.value : {};
+        const feesConfigData = await getIndexedDB('feesConfig', className);
+        const totalFullAmount = feesConfigData && Number.isFinite(feesConfigData.value) ? feesConfigData.value : 0;
+        const studentsData = await getIndexedDB('students', className);
+        const classStudents = studentsData ? studentsData.value : [];
+        const studentMap = new Map();
+        classStudents.forEach(student => {
+          if (student && student.id) {
+            studentMap.set(student.id, student);
+          }
+        });
+        let found = false;
+        const fragment = document.createDocumentFragment();
+        const table = document.createElement('table');
+        table.innerHTML = '<thead><tr><th>Date</th><th>ID</th><th>Name</th><th>Amount (ZMW)</th><th>Status</th><th>Action</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+
+        Object.keys(classFees).forEach(id => {
+          if (!studentId || id === studentId) {
+            const student = studentMap.get(id);
+            if (!student) return;
+            const feeData = Array.isArray(classFees[id]) ? classFees[id] : [];
+            let runningTotal = 0;
+            feeData.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach((fee, index) => {
+              runningTotal += Number.isFinite(fee.amount) ? fee.amount : 0;
+              found = true;
+              let status;
+              if (totalFullAmount > 0 && runningTotal >= totalFullAmount) {
+                status = '<span class="paid">Fully Paid ✅</span>';
+              } else if (runningTotal > 0) {
+                status = '<span class="outstanding">Paid with Outstanding Balance</span>';
+              } else {
+                status = '<span class="unpaid">Not Paid Yet ❌</span>';
+              }
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<td>${escapeHTML(fee.date)}</td><td>${escapeHTML(id)}</td><td>${escapeHTML(student.name)}</td><td>${fee.amount} ZMW</td><td>${status}</td><td class="action-cell"></td>`;
+              const actionCell = tr.querySelector('.action-cell');
+              const editBtn = document.createElement('button');
+              editBtn.className = 'edit-fee-btn';
+              editBtn.textContent = 'Edit';
+              editBtn.addEventListener('click', () => editFeeRecord(className, id, index, fee.amount, fee.date));
+              actionCell.appendChild(editBtn);
+              const deleteBtn = document.createElement('button');
+              deleteBtn.className = 'delete-fee-btn';
+              deleteBtn.textContent = 'Delete';
+              deleteBtn.addEventListener('click', () => deleteFeeRecord(className, id, index));
+              actionCell.appendChild(deleteBtn);
+              tbody.appendChild(tr);
+            });
+          }
+        });
+
+        if (!found) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td colspan="6">No fee records found</td>';
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        fragment.appendChild(table);
+        historyDiv.innerHTML = '';
+        historyDiv.appendChild(fragment);
+        historyDiv.style.display = 'block';
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.editFeeRecord = async function (className, studentId, feeIndex, currentAmount, currentDate) {
+      const newAmount = prompt(`Enter new fee amount for ${studentId} in ${className} (current: ${currentAmount} ZMW):`, currentAmount);
+      if (newAmount === null) return;
+      const parsedAmount = parseFloat(newAmount);
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+      showLoading('Updating fee record...');
+      try {
+        const feesData = await getIndexedDB('fees', className);
+        let classFees = feesData ? feesData.value : {};
+        if (classFees[studentId] && Array.isArray(classFees[studentId])) {
+          classFees[studentId][feeIndex].amount = parsedAmount;
+          await setIndexedDB('fees', className, classFees);
+          alert(`Fee updated to ${parsedAmount} ZMW for ${studentId}`);
+          viewFeesHistory();
+        } else {
+          alert('Error: Fee record not found');
+        }
+      } catch (error) {
+        console.error('Error updating fee:', error);
+        alert('Error updating fee. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.deleteFeeRecord = async function (className, studentId, feeIndex) {
+      if (!confirm(`Are you sure you want to delete the fee record for ${studentId} in ${className}?`)) {
+        return;
+      }
+      showLoading('Deleting fee record...');
+      try {
+        const feesData = await getIndexedDB('fees', className);
+        let classFees = feesData ? feesData.value : {};
+        if (classFees[studentId] && Array.isArray(classFees[studentId])) {
+          classFees[studentId].splice(feeIndex, 1);
+          if (classFees[studentId].length === 0) {
+            delete classFees[studentId];
+          }
+          await setIndexedDB('fees', className, classFees);
+          alert(`Fee record deleted for ${studentId}`);
+          viewFeesHistory();
+        } else {
+          alert('Error: Fee record not found');
+        }
+      } catch (error) {
+        console.error('Error deleting fee record:', error);
+        alert('Error deleting fee record. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.deleteAllFees = async function () {
+      let className;
+      const historyClass = document.getElementById('fees-history-class').value;
+      if (historyClass) {
+        className = historyClass;
+      } else {
+        className = document.getElementById('fees-class').value;
+      }
+      if (!className) {
+        alert('Select a class');
+        return;
+      }
+      const studentId = document.getElementById('fees-search-student-id').value.trim();
+      let message = studentId
+        ? `Are you sure you want to delete all fee records for student ${studentId} in ${className}?`
+        : `Are you sure you want to delete all fee records for all students in ${className}?`;
+      if (!confirm(message)) {
+        return;
+      }
+      showLoading('Deleting fee records...');
+      try {
+        const feesData = await getIndexedDB('fees', className);
+        let classFees = feesData ? feesData.value : {};
+        if (studentId) {
+          delete classFees[studentId];
+        } else {
+          classFees = {};
+        }
+        await setIndexedDB('fees', className, classFees);
+        alert(studentId ? `All fee records deleted for ${studentId} in ${className}` : `All fee records deleted for ${className}`);
+        if (historyClass) {
+          viewFeesHistory();
+        } else {
+          loadFeesStudents();
+        }
+      } catch (error) {
+        console.error('Error deleting fees:', error);
+        alert('Error deleting fees. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    };
+
+    window.hideFeesHistory = function () {
+      document.getElementById('fees-history').style.display = 'none';
+    };
+
+    document.getElementById('login-btn').addEventListener('click', () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const authMsg = document.getElementById('auth-msg');
+      if (!email || !password) {
+        authMsg.textContent = 'Please fill all fields';
+        return;
+      }
+      showLoading('Logging in...');
+      signInWithEmailAndPassword(auth, email, password)
+        .then(userCredential => {
+          currentTeacher = email;
+          authMsg.textContent = 'Login successful!';
+          showDashboard();
+        })
+        .catch(error => {
+          authMsg.textContent = `Error: ${error.message}`;
+        })
+        .finally(() => {
+          hideLoading();
+        });
+    });
+
+    document.getElementById('register-btn').addEventListener('click', () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const authMsg = document.getElementById('auth-msg');
+      if (!email || !password) {
+        authMsg.textContent = 'Please fill all fields';
+        return;
+      }
+      showLoading('Registering...');
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(userCredential => {
+          currentTeacher = email;
+          authMsg.textContent = 'Registration successful!';
+          showDashboard();
+        })
+        .catch(error => {
+          authMsg.textContent = `Error: ${error.message}`;
+        })
+        .finally(() => {
+          hideLoading();
+        });
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      const email = document.getElementById('email').value.trim();
+      const authMsg = document.getElementById('auth-msg');
+      if (!email) {
+        authMsg.textContent = 'Please enter your email';
+        return;
+      }
+      showLoading('Sending reset email...');
+      sendPasswordResetEmail(auth, email)
+        .then(() => {
+          authMsg.textContent = 'Password reset email sent!';
+        })
+        .catch(error => {
+          authMsg.textContent = `Error: ${error.message}`;
+        })
+        .finally(() => {
+          hideLoading();
+        });
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      showLoading('Logging out...');
+      signOut(auth).then(() => {
+        currentTeacher = null;
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+        hideAllSections();
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('auth-msg').textContent = '';
+        if (clockInterval) clearInterval(clockInterval);
+        history.pushState({ view: 'auth' }, '', '#auth');
+      }).catch(error => {
+        document.getElementById('auth-msg').textContent = `Error: ${error.message}`;
+      }).finally(() => {
+        hideLoading();
+      });
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        currentTeacher = user.email;
+        showDashboard();
+      } else {
+        currentTeacher = null;
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+        hideAllSections();
+        if (clockInterval) clearInterval(clockInterval);
+        history.pushState({ view: 'auth' }, '', '#auth');
+      }
+    });
+
+    window.addEventListener('popstate', event => {
+      const state = event.state || {};
+      const view = state.view || 'auth';
+      if (view === 'auth') {
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+        hideAllSections();
+      } else {
+        showSection(view);
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      showLoading('Initializing app...');
+      try {
+        await initIndexedDB();
+        const splashScreen = document.getElementById('splash-screen');
+        const progressFill = document.getElementById('progress-fill');
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 10;
+          progressFill.style.width = `${progress}%`;
+          if (progress >= 100) {
+            clearInterval(interval);
+            splashScreen.style.opacity = '0';
+            setTimeout(() => {
+              splashScreen.style.display = 'none';
+              hideLoading();
+            }, 1200);
+          }
+        }, 300);
+        loadClasses();
+        history.replaceState({ view: 'auth' }, '', '#auth');
+      } catch (error) {
+        console.error('App initialization error:', error);
+        hideLoading();
+        alert('Error initializing app. Please refresh.');
+      }
+    });
+   
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent automatic prompt
+  e.preventDefault();
+  // Save the event for later use
+  deferredPrompt = e;
+  console.log('Install prompt is ready!');
+});
+
+const installBtn = document.getElementById('install-btn');
+
+installBtn.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt(); // Show the prompt
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      console.log('User accepted the install!');
+      installBtn.style.display = 'none'; // Hide button after install
+    } else {
+      console.log('User dismissed the install.');
+    }
+    deferredPrompt = null; // Reset
+  } else {
+    console.log('Install prompt not ready yet.');
+  }
+});
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('service-worker.js') // no slash at the start!
+          .then(reg => console.log('✅ Service Worker registered!', reg.scope))
+          .catch(err => console.error('❌ Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
